@@ -7,7 +7,7 @@ export default function Header() {
   const router = useRouter();
 
   return (
-    <header className="sticky top-0 z-50 flex items-center justify-between w-full bg-white p-4 border-b">
+    <header className="sticky top-0 z-50 flex items-center justify-between w-full sm:p-6 bg-white p-4">
 
       <button
         onClick={() => router.back()}
