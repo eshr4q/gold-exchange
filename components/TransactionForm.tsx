@@ -26,7 +26,8 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
 }) => {
 
   return (
-    <form onSubmit={onSubmit} className="flex flex-col gap-10 w-full max-w-[600px] mx-auto">
+    <>
+    <form onSubmit={onSubmit} className="flex flex-col gap-10 w-full">
       <div className="flex flex-col gap-2">
         <label className="text-sm font-medium text-gray-700">
           {amountLabel}
@@ -65,6 +66,7 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
         <span>کارمزد خرید :</span>
         <span>{feeText}</span>
       </div>
+      <div className="bg-[#c02727] -mx-10 px-4 pt-4 pb-6 mt-30 -mb-5">
 
       <button
         type="submit"
@@ -75,8 +77,9 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
       >
         {submitButtonLabel}
       </button>
-
+      </div>
     </form>
+    </>
   );
 };
 

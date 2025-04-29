@@ -25,7 +25,7 @@ const GoldPriceTicker = () => {
   }, []);
 
   return (
-    <div className="flex items-center justify-between bg-[#FFFCF4] p-2 sm:p-3 rounded shadow-md w-full max-w-2xl mx-auto">
+    <div className="flex items-center justify-between bg-[#FFFCF4] p-2 sm:p-3 rounded shadow-[0px_0px_5px_rgba(0,0,0,0.3)] w-full">
       <div className="w-10 h-10 relative ml-4">
         <Image
           src="/assets/gold-ingot.png"
