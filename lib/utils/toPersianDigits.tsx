@@ -3,4 +3,3 @@ export function toPersianDigits(input: string | number): string {
       .toString()
       .replace(/\d/g, (digit) => "۰۱۲۳۴۵۶۷۸۹"[parseInt(digit)]);
   }
-  
