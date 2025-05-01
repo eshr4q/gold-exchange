@@ -6,7 +6,7 @@ import TransactionForm from '@/components/TransactionForm';
 import {
   calculateFeeFromAmount,
   calculateTotalAmount,
-  calculateSootFromAmount
+  calculateUnitFromAmount
 } from '@/lib/utils/amountCalculator';
 import { toPersianDigits } from '@/lib/utils/toPersianDigits';
 
@@ -20,6 +20,7 @@ const BuyGoldPage = () => {
 
   const {
     register,
+    control,
     handleSubmit,
     watch,
     setValue,
@@ -44,7 +45,7 @@ const BuyGoldPage = () => {
 
   useEffect(() => {
     if (amount && !isNaN(amount)) {
-      const newWeight = calculateSootFromAmount(pricePerSoot, amount);
+      const newWeight = calculateUnitFromAmount(pricePerSoot, amount);
       const newFee = calculateFeeFromAmount(pricePerSoot, newWeight);
       setValue('weight', newWeight, { shouldValidate: true });
       setFeeText(`${toPersianDigits(newFee)} ریال`);
@@ -63,6 +64,7 @@ const BuyGoldPage = () => {
       isValid={isValid}
       submitButtonLabel="خرید طلا"
       feeText={feeText}
+      control={control}
     />
   );
 };

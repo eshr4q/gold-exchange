@@ -1,6 +1,4 @@
-
 import React from 'react'
-
 
 type TabSelectorProps = {
     activeTab: 'buy' | 'sell';
@@ -9,9 +7,9 @@ type TabSelectorProps = {
   
   export default function TabSelector({ activeTab, onTabChange }: TabSelectorProps) {
     return (
-      <div className="flex w-full mt-10 bg-[#FFF9F1] rounded-sm p-1">
+      <div className="flex w-full mt-10 bg-[#FFF9F1] rounded-[6px]-sm p-1">
         <button
-          className={`flex-1 text-center py-2 rounded-sm transition ${
+          className={`flex-1 text-center py-2 rounded-[6px] transition ${
             activeTab === 'buy' ? 'bg-[#C99E38] text-white' : 'text-gray-600'
           }`}
           onClick={() => onTabChange('buy')}
@@ -19,7 +17,7 @@ type TabSelectorProps = {
           خرید طلا
         </button>
         <button
-          className={`flex-1 text-center py-2 rounded-sm transition ${
+          className={`flex-1 text-center py-2 rounded-[6px] transition ${
             activeTab === 'sell' ? 'bg-[#C99E38] text-white' : 'text-gray-600'
           }`}
           onClick={() => onTabChange('sell')}
