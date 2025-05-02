@@ -10,7 +10,7 @@ export default function Home() {
   const [activeTab, setActiveTab] = useState<"buy" | "sell">("buy");
 
   return (
-    <div className="font-[family-name:var(--font-geist-sans)] flex flex-col items-center gap-2">
+    <div className="font-[family-name:var(--font-geist-sans)] flex flex-col items-center gap-2 h-screen overflow-y">
 
       <div className="w-full">
         <GoldPriceTicker />

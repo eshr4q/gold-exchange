@@ -33,6 +33,7 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
 
   const [amountDisplay, setAmountDisplay] = useState('');
   const [weightDisplay, setWeightDisplay] = useState('');
+  const [isButtonActive, setIsButtonActive] = useState(false);
 
   useEffect(() => {
     setAmountDisplay(toPersianDigits(watchedAmount ?? ''));
@@ -42,7 +43,17 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
     setWeightDisplay(toPersianDigits(watchedWeight ?? ''));
   }, [watchedWeight]);
 
+  useEffect(() => {
+    if (watchedAmount || watchedWeight) {
+      setIsButtonActive(true);
+    } else {
+      setIsButtonActive(false);
+    }
+  }, [watchedAmount, watchedWeight]);
+
+
   return (
+    <>
     <form onSubmit={onSubmit} className="flex flex-col gap-10 w-full">
       <div className="flex flex-col gap-2">
         <label className="text-sm font-medium text-gray-700">{amountLabel}</label>
@@ -103,18 +114,19 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
         <span>{feeText}</span>
       </div>
 
-      <div className="bg-[#c02727] -mx-10 px-4 pt-4 pb-6 mt-30 -mb-5">
+      <div className="bg-[#FBFBFB] self-center-safe lg:w-[670px] md:w-[580px] sm:w-[510px] w-full px-6 p-4 fixed bottom-0">
         <button
           type="submit"
-          disabled={!isValid}
-          className={`w-full py-3 rounded-[6px] bg-yellow-500 text-white font-semibold transition ${
-            !isValid ? 'opacity-50 cursor-not-allowed' : 'hover:bg-[#C99E38]'
+          disabled={!isButtonActive}
+          className={`w-full py-3 rounded-[6px] font-semibold transition ${
+            isButtonActive ? 'bg-[#C99E38] text-white hover:bg-[#C99E38]' : 'bg-[#D7DEE0] text-gray-500 cursor-not-allowed'
           }`}
         >
           {submitButtonLabel}
         </button>
       </div>
     </form>
+        </>
   );
 };
 
