@@ -51,7 +51,6 @@ const SellGoldPage = () => {
         setIsLoading(false);
       }
     };
-
     getPrice();
   }, []);
 

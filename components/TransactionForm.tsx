@@ -70,7 +70,7 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
 
 
   return (
-    <>
+  <>
     <form onSubmit={onSubmit} className="flex flex-col gap-10 w-full">
       <div className="flex flex-col gap-2">
         <label className="text-sm font-medium text-gray-700">{amountLabel}</label>
@@ -174,7 +174,7 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
         </button>
       </div>
     </form>
-        </>
+  </>
   );
 };
 
