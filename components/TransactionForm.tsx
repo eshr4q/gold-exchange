@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { FieldErrors, UseFormRegister, Controller, Control, useWatch } from 'react-hook-form';
 import { toPersianDigits } from '@/lib/utils/toPersianDigits';
 import { toEnglishDigits } from '@/lib/utils/toPersianDigits';
+import { toTomanString } from '@/lib/utils/toTomanString';
 
 interface TransactionFormProps {
   onSubmit: (e?: React.BaseSyntheticEvent) => void;
@@ -79,7 +80,15 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
           />
           <span className="absolute top-1/2 left-3 -translate-y-1/2 text-gray-400 text-sm">ریال</span>
         </div>
-        {errors.amount && <span className="text-red-500 text-xs">مقدار الزامی است</span>}
+        {(watchedAmount || watchedAmount === 0) && (
+          <div className="flex justify-between items-center text-xs mt-1">
+            {errors.weight ? (
+              <span className="text-red-500">مقدار طلا الزامی است</span>
+            ) : watchedAmount ? (
+              <span className="text-gray-500">معادل {toPersianDigits(toTomanString(watchedAmount))} </span>
+            ) : null}
+          </div>
+        )}
       </div>
 
       <div className="flex flex-col gap-2">
@@ -106,7 +115,15 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
           />
           <span className="absolute top-1/2 left-3 -translate-y-1/2 text-gray-400 text-sm">سوت</span>
         </div>
-        {errors.weight && <span className="text-red-500 text-xs">مقدار طلا الزامی است</span>}
+        {(watchedWeight || watchedWeight === 0) && (
+          <div className="flex justify-between items-center text-xs mt-1">
+            {errors.weight ? (
+              <span className="text-red-500">مقدار طلا الزامی است</span>
+            ) : watchedWeight ? (
+              <span className="text-gray-500">معادل {Number(watchedWeight * 0.001).toFixed(3)} گرم</span>
+            ) : null}
+          </div>
+        )}
       </div>
 
       <div className="flex justify-between text-sm text-[#333333] border-b pb-4 border-[#E4E7E8]">
