@@ -32,15 +32,13 @@ const BuyGoldPage = () => {
   const [feeText, setFeeText] = useState('۰ ریال');
   const [pricePerUnit, setPricePerUnit] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [activeField, setActiveField] = useState<'amount' | 'weight' | null>(null);
 
   const amount = watch('amount');
   const weight = watch('weight');
 
-  const [debouncedAmount] = useDebounce(amount, 300);
-  const [debouncedWeight] = useDebounce(weight, 300);
-
-  const sourceField = useRef<'amount' | 'weight' | null>(null);
-
+  const [debouncedAmount] = useDebounce(amount, 500);
+  const [debouncedWeight] = useDebounce(weight, 500);
 
   useEffect(() => {
     const getPrice = async () => {
@@ -57,15 +55,29 @@ const BuyGoldPage = () => {
     getPrice();
   }, []);
 
+  useEffect(() => {
+    const activeElementName = document.activeElement?.getAttribute('name');
+    if (activeElementName === 'weight') {
+      setActiveField('weight');
+    }
+  }, [weight]);
+
+  useEffect(() => {
+    const activeElementName = document.activeElement?.getAttribute('name');
+    if (activeElementName === 'amount') {
+      setActiveField('amount');
+    }
+  }, [amount]);
+
 
   useEffect(() => {
     if (pricePerUnit === null || isLoading) return;
-    if (sourceField.current !== 'weight') return;
+    if (activeField !== 'weight') return;
 
     if (typeof debouncedWeight === 'number' && !isNaN(debouncedWeight)) {
       const newAmount = calculateTotalAmount(pricePerUnit, debouncedWeight);
       const newFee = calculateFeeFromAmount(pricePerUnit, debouncedWeight);
-      setValue('amount', newAmount, { shouldValidate: true });
+      setValue('amount', newAmount, { shouldValidate: true, shouldDirty: false });
       setFeeText(`${toPersianDigits(newFee)} ریال`);
     }
   }, [debouncedWeight]);
@@ -73,24 +85,16 @@ const BuyGoldPage = () => {
 
   useEffect(() => {
     if (pricePerUnit === null || isLoading) return;
-    if (sourceField.current !== 'amount') return;
+    if (activeField !== 'amount') return;
 
     if (typeof debouncedAmount === 'number' && !isNaN(debouncedAmount)) {
       const newWeight = calculateUnitFromAmount(pricePerUnit, debouncedAmount);
       const newFee = calculateFeeFromAmount(pricePerUnit, newWeight);
-      setValue('weight', newWeight, { shouldValidate: true });
+      setValue('weight', newWeight, { shouldValidate: true, shouldDirty: false });
       setFeeText(`${toPersianDigits(newFee)} ریال`);
     }
   }, [debouncedAmount]);
 
-  
-  useEffect(() => {
-    sourceField.current = 'weight';
-  }, [weight]);
-
-  useEffect(() => {
-    sourceField.current = 'amount';
-  }, [amount]);
 
   const onSubmit = (data: BuyFormInputs) => {
     console.log('خرید طلا', data);

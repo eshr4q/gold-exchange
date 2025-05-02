@@ -64,6 +64,7 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
             name="amount"
             render={({ field }) => (
               <input
+                name="amount"
                 type="text"
                 inputMode="numeric"
                 placeholder={toPersianDigits(0)}
@@ -99,6 +100,7 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
             name="weight"
             render={({ field }) => (
               <input
+                name='weight'
                 type="text"
                 inputMode="numeric"
                 placeholder={toPersianDigits(0)}
@@ -120,7 +122,7 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
             {errors.weight ? (
               <span className="text-red-500">مقدار طلا الزامی است</span>
             ) : watchedWeight ? (
-              <span className="text-gray-500">معادل {Number(watchedWeight * 0.001).toFixed(3)} گرم</span>
+              <span className="text-gray-500">معادل {toPersianDigits(Number(watchedWeight * 0.001).toFixed(3))} گرم</span>
             ) : null}
           </div>
         )}
