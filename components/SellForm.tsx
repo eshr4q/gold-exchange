@@ -40,6 +40,9 @@ const SellGoldPage = () => {
       const newFee = calculateFeeFromAmount(pricePerSoot, weight);
       setValue('amount', newAmount, { shouldValidate: true });
       setFeeText(`${toPersianDigits(newFee)} ریال`);
+    }else if (weight === 0) {
+      setValue('amount', 0, { shouldValidate: true });
+      setFeeText('۰ ریال');
     }
   }, [weight]);
 
@@ -49,6 +52,9 @@ const SellGoldPage = () => {
       const newFee = calculateFeeFromAmount(pricePerSoot, newWeight);
       setValue('weight', newWeight, { shouldValidate: true });
       setFeeText(`${toPersianDigits(newFee)} ریال`);
+    }else if (amount === 0) {
+      setValue('weight', 0, { shouldValidate: true });
+      setFeeText('۰ ریال');
     }
   }, [amount]);
 
