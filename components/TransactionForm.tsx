@@ -5,6 +5,7 @@ import { FieldErrors, UseFormRegister, Controller, Control, useWatch } from 'rea
 import { toPersianDigits } from '@/lib/utils/toPersianDigits';
 import { toEnglishDigits } from '@/lib/utils/toPersianDigits';
 import { toTomanString } from '@/lib/utils/toTomanString';
+import { fetchPrice } from '@/lib/services/test-api';
 
 interface TransactionFormProps {
   onSubmit: (e?: React.BaseSyntheticEvent) => void;
@@ -35,6 +36,8 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
   const [amountDisplay, setAmountDisplay] = useState('');
   const [weightDisplay, setWeightDisplay] = useState('');
   const [isButtonActive, setIsButtonActive] = useState(false);
+  const [price, setPrice] = useState<number | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     setAmountDisplay(toPersianDigits(watchedAmount ?? ''));
@@ -53,6 +56,19 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
   }, [watchedAmount, watchedWeight]);
 
 
+  useEffect(() => {
+    const loadPrice = async () => {
+      try {
+        const data = await fetchPrice();
+        setPrice(data.price);
+      } catch (err: any) {
+        setError('Failed to load the price');
+      }
+    };
+    loadPrice();
+  }, []);
+
+
   return (
     <>
     <form onSubmit={onSubmit} className="flex flex-col gap-10 w-full">
@@ -62,6 +78,17 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
           <Controller
             control={control}
             name="amount"
+            rules={{
+              validate: (value) => {
+                if (!price) return true;
+                if (value === "" || value === 0) {
+                  return true; 
+                }
+                if (value < price) return `مبلغ وارد شده باید حداقل ${toPersianDigits(price)} ریال باشد.`;
+                if (value > 2000000000) return `حداکثر مبلغ قابل قبول ${toPersianDigits(2000000000)} ریال است.`;
+                return true;
+              }
+            }}
             render={({ field }) => (
               <input
                 name="amount"
@@ -72,7 +99,7 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
                 onChange={(e) => {
                   const raw = e.target.value;
                   const english = toEnglishDigits(raw).replace(/[^\d]/g, '');
-                  field.onChange(Number(english));
+                  field.onChange(Number(english), { shouldValidate: true });
                   setAmountDisplay(toPersianDigits(english));
                 }}
                 className="w-full border border-[#DED8F1] rounded-[6px] p-3 pr-5 text-right text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#B9A2FD]"
@@ -83,8 +110,10 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
         </div>
         {(watchedAmount || watchedAmount === 0) && (
           <div className="flex justify-between items-center text-xs mt-1">
-            {errors.weight ? (
-              <span className="text-red-500">مقدار طلا الزامی است</span>
+            {errors.amount ? (
+              <span className="text-red-500 text-xs">
+              {(typeof errors.amount.message === 'string' && errors.amount.message) || 'مقدار الزامی است'}
+          </span>
             ) : watchedAmount ? (
               <span className="text-gray-500">معادل {toPersianDigits(toTomanString(watchedAmount))} </span>
             ) : null}
