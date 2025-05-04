@@ -1,15 +1,16 @@
 'use client';
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import TransactionForm from '@/components/TransactionForm';
 import {
   calculateFeeFromAmount,
   calculateTotalAmount,
-  calculateUnitFromAmount
+  calculateUnitFromAmount,
+  calculateUnitAndCorrectAmount
 } from '@/lib/utils/amountCalculator';
 import { toPersianDigits } from '@/lib/utils/toPersianDigits';
-import { fetchPrice } from '@/lib/services/test-api';
+import useGoldPriceStore from '@/lib/store/goldPriceStore';
 import { useDebounce } from 'use-debounce';
 
 interface BuyFormInputs {
@@ -29,12 +30,9 @@ const BuyGoldPage = () => {
     mode: 'onChange',
   });
 
-  const [feeText, setFeeText] = useState('۰ ریال');
-  const [pricePerUnit, setPricePerUnit] = useState<number | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [activeField, setActiveField] = useState<'amount' | 'weight' | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const { price, fetchPrice } = useGoldPriceStore();
+  const [feeText, setFeeText] = React.useState('۰ ریال');
+  const [activeField, setActiveField] = React.useState<'amount' | 'weight' | null>(null);
 
   const amount = watch('amount');
   const weight = watch('weight');
@@ -43,21 +41,9 @@ const BuyGoldPage = () => {
   const [debouncedWeight] = useDebounce(weight, 500);
 
   useEffect(() => {
-    const getPrice = async () => {
-      const data = await fetchPrice();
-      if (data) {
-        setPricePerUnit(data.price);
-      } else {
-        setError("خطا در گرفتن قیمت طلا");
-      }
-    };
-
-    getPrice();
-    intervalRef.current = setInterval(getPrice, 30000);
-
-    return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
-    };
+    fetchPrice();
+    const interval = setInterval(fetchPrice, 30000);
+    return () => clearInterval(interval);
   }, []);
 
   useEffect(() => {
@@ -74,33 +60,38 @@ const BuyGoldPage = () => {
     }
   }, [amount]);
 
-
   useEffect(() => {
-    if (pricePerUnit === null || isLoading) return;
+    if (price === null) return;
     if (activeField !== 'weight') return;
 
     if (typeof debouncedWeight === 'number' && !isNaN(debouncedWeight)) {
-      const newAmount = calculateTotalAmount(pricePerUnit, debouncedWeight);
-      const newFee = calculateFeeFromAmount(pricePerUnit, debouncedWeight);
+      const newAmount = calculateTotalAmount(price, debouncedWeight);
+      const newFee = calculateFeeFromAmount(price, debouncedWeight);
       setValue('amount', newAmount, { shouldValidate: true, shouldDirty: false });
       setFeeText(`${toPersianDigits(newFee)} ریال`);
     }
   }, [debouncedWeight]);
 
-
   useEffect(() => {
-    if (pricePerUnit === null || isLoading) return;
+    if (price === null) return;
     if (activeField !== 'amount') return;
-
+  
     if (typeof debouncedAmount === 'number' && !isNaN(debouncedAmount)) {
-      const newWeight = calculateUnitFromAmount(pricePerUnit, debouncedAmount);
-      const newFee = calculateFeeFromAmount(pricePerUnit, newWeight);
+      const { unit: newWeight, correctedAmount } = calculateUnitAndCorrectAmount(price, debouncedAmount);
+      const newFee = calculateFeeFromAmount(price, newWeight);
+  
+      // فقط اگر عدد وارد شده در بازه معتبری بود، فیلد amount رو اصلاح کن
+      if (correctedAmount !== null) {
+        setValue('amount', correctedAmount, { shouldValidate: true, shouldDirty: false });
+      }
+  
+      // همیشه وزن و کارمزد رو آپدیت کن (وزن ممکنه ۰ باشه)
       setValue('weight', newWeight, { shouldValidate: true, shouldDirty: false });
       setFeeText(`${toPersianDigits(newFee)} ریال`);
     }
   }, [debouncedAmount]);
-
-
+  
+  
   const onSubmit = (data: BuyFormInputs) => {
     console.log('خرید طلا', data);
   };
@@ -110,8 +101,8 @@ const BuyGoldPage = () => {
       onSubmit={handleSubmit(onSubmit)}
       register={register}
       errors={errors}
-      isValid={isValid && !isLoading}
-      submitButtonLabel={isLoading ? 'در حال دریافت قیمت...' : 'خرید طلا'}
+      isValid={isValid}
+      submitButtonLabel={'خرید طلا'}
       feeText={feeText}
       control={control}
     />

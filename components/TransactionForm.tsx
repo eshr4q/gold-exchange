@@ -5,7 +5,7 @@ import { FieldErrors, UseFormRegister, Controller, Control, useWatch } from 'rea
 import { toPersianDigits } from '@/lib/utils/toPersianDigits';
 import { toEnglishDigits } from '@/lib/utils/toPersianDigits';
 import { toTomanString } from '@/lib/utils/toTomanString';
-import { fetchPrice } from '@/lib/services/test-api';
+import useGoldPriceStore from '@/lib/store/goldPriceStore';
 
 interface TransactionFormProps {
   onSubmit: (e?: React.BaseSyntheticEvent) => void;
@@ -33,28 +33,14 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
   const watchedAmount = useWatch({ control, name: 'amount' });
   const watchedWeight = useWatch({ control, name: 'weight' });
 
-  const [price, setPrice] = useState<number | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const intervalRef = useRef<NodeJS.Timeout | null>(null); // Store interval reference
+  const { price, rate, fetchPrice, error } = useGoldPriceStore();
 
-  
   useEffect(() => {
-    const loadPrice = async () => {
-      const data = await fetchPrice();
-      if (data) {
-        setPrice(data.price);
-      } else {
-        setError("Failed to load the price");
-      }
-    };
-
-    loadPrice(); // Initial fetch
-    intervalRef.current = setInterval(loadPrice, 30000); // Fetch every 30 seconds
-
-    return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current); // Proper cleanup
-    };
+    fetchPrice();
+    const interval = setInterval(fetchPrice, 30000);
+    return () => clearInterval(interval);
   }, []);
+
 
   const validateAmount = useMemo(() => {
     return (value: number) => {

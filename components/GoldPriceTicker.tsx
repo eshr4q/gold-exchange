@@ -5,31 +5,16 @@ import Image from "next/image";
 import { fetchPrice } from "@/lib/services/test-api";
 import { toPersianDigits } from "@/lib/utils/toPersianDigits";
 import { Triangle } from 'lucide-react';
-
+import useGoldPriceStore from "@/lib/store/goldPriceStore";
 
 const GoldPriceTicker = () => {
-  const [price, setPrice] = useState<number | null>(null);
-  const [rate, setRate] = useState<number | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  const { price, rate, fetchPrice, error } = useGoldPriceStore();
 
   useEffect(() => {
-    const loadPrice = async () => {
-      const data = await fetchPrice();
-      if (data) {
-        setPrice(data.price);
-        setRate(data.rate);
-      } else {
-        setError("Failed to load the price");
-      }
-    };
-
-    loadPrice(); 
-    intervalRef.current = setInterval(loadPrice, 30000);
-
-    return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current); // Cleanup on unmount
-    };
+    fetchPrice();
+    const interval = setInterval(fetchPrice, 30000);
+    return () => clearInterval(interval);
   }, []);
 
   return (
