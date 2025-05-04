@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import Image from "next/image";
 import { fetchPrice } from "@/lib/services/test-api";
 import { toPersianDigits } from "@/lib/utils/toPersianDigits";
@@ -11,18 +11,25 @@ const GoldPriceTicker = () => {
   const [price, setPrice] = useState<number | null>(null);
   const [rate, setRate] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     const loadPrice = async () => {
-      try {
-        const data = await fetchPrice();
+      const data = await fetchPrice();
+      if (data) {
         setPrice(data.price);
         setRate(data.rate);
-      } catch (err: any) {
-        setError('Failed to load the price');
+      } else {
+        setError("Failed to load the price");
       }
     };
-    loadPrice();
+
+    loadPrice(); 
+    intervalRef.current = setInterval(loadPrice, 30000);
+
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current); // Cleanup on unmount
+    };
   }, []);
 
   return (
@@ -32,8 +39,7 @@ const GoldPriceTicker = () => {
           src="/assets/gold-ingot.png"
           alt="gold ingot"
           fill
-          sizes="10"
-          className="object-contain"
+          sizes="(max-width: 600px) 40px, 80px"
         />
       </div>
       <div className="flex flex-col gap-2 w-full">
@@ -42,6 +48,7 @@ const GoldPriceTicker = () => {
             قیمت حال حاضر یک سوت طلا
           </span>
           <span className="text-sm text-gray-700">
+          <div aria-live="assertive">
           {price !== null ? (
             <span className="flex items-baseline gap-1">
               <span className="text-sm text-gray-700">
@@ -50,6 +57,7 @@ const GoldPriceTicker = () => {
               <span className="text-xs text-gray-500"> ریال </span>
             </span>
           ) : error}
+          </div>
           </span>
         </div>
         <div className="flex items-center justify-between">

@@ -33,6 +33,8 @@ const BuyGoldPage = () => {
   const [pricePerUnit, setPricePerUnit] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [activeField, setActiveField] = useState<'amount' | 'weight' | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const amount = watch('amount');
   const weight = watch('weight');
@@ -42,17 +44,20 @@ const BuyGoldPage = () => {
 
   useEffect(() => {
     const getPrice = async () => {
-      try {
-        const data = await fetchPrice();
+      const data = await fetchPrice();
+      if (data) {
         setPricePerUnit(data.price);
-      } catch (error) {
-        console.error('خطا در گرفتن قیمت طلا:', error);
-      } finally {
-        setIsLoading(false);
+      } else {
+        setError("خطا در گرفتن قیمت طلا");
       }
     };
 
     getPrice();
+    intervalRef.current = setInterval(getPrice, 30000);
+
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
   }, []);
 
   useEffect(() => {

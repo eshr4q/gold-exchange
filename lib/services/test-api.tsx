@@ -5,10 +5,12 @@ export interface TestApiShemsh {
     rate: number;
     updated_at: string;
 }
-
-export const fetchPrice = async (): Promise<TestApiShemsh> => {
-  const response = await axios.get<TestApiShemsh>(`https://testapi.shemsh.gold/api/app/gold/price`, {
-    //headers: { accept: 'application/json' },
-  });
-  return response.data;
+export const fetchPrice = async (): Promise<TestApiShemsh | null> => {
+  try {
+    const response = await axios.get<TestApiShemsh>("https://testapi.shemsh.gold/api/app/gold/price");
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching gold price:", error);
+    return null; 
+  }
 };

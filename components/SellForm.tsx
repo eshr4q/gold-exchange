@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import TransactionForm from '@/components/TransactionForm';
 import {
@@ -29,83 +29,66 @@ const SellGoldPage = () => {
     mode: 'onChange',
   });
 
-  const [feeText, setFeeText] = useState('۰ ریال');
   const [pricePerUnit, setPricePerUnit] = useState<number | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [activeField, setActiveField] = useState<'amount' | 'weight' | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const amount = watch('amount');
   const weight = watch('weight');
+  const activeField = document.activeElement?.getAttribute('name') as 'amount' | 'weight' | null;
 
   const [debouncedAmount] = useDebounce(amount, 500);
   const [debouncedWeight] = useDebounce(weight, 500);
 
   useEffect(() => {
     const getPrice = async () => {
-      try {
-        const data = await fetchPrice();
+      const data = await fetchPrice();
+      if (data) {
         setPricePerUnit(data.price);
-      } catch (error) {
-        console.error('خطا در گرفتن قیمت طلا:', error);
-      } finally {
-        setIsLoading(false);
+      } else {
+        setError("خطا در گرفتن قیمت طلا");
       }
     };
+
     getPrice();
+    intervalRef.current = setInterval(getPrice, 30000);
+
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
   }, []);
 
+
+  // Unified fee calculation logic (removes redundancy)
+  const feeText = useMemo(() => {
+    if (!pricePerUnit) return '۰ ریال';
+    const baseAmount = activeField === 'weight' ? debouncedWeight : debouncedAmount;
+    if (!baseAmount || isNaN(baseAmount)) return '۰ ریال';
+    return `${toPersianDigits(calculateFeeFromAmount(pricePerUnit, baseAmount))} ریال`;
+  }, [pricePerUnit, debouncedAmount, debouncedWeight]);
+
+  // Sync amount ↔ weight calculation efficiently
   useEffect(() => {
-    const activeElementName = document.activeElement?.getAttribute('name');
-    if (activeElementName === 'weight') {
-      setActiveField('weight');
+    if (!pricePerUnit) return;
+    if (activeField === 'weight' && typeof debouncedWeight === 'number' && !isNaN(debouncedWeight)) {
+      setValue('amount', calculateTotalAmount(pricePerUnit, debouncedWeight), { shouldValidate: true });
+    } else if (activeField === 'amount' && typeof debouncedAmount === 'number' && !isNaN(debouncedAmount)) {
+      setValue('weight', calculateUnitFromAmount(pricePerUnit, debouncedAmount), { shouldValidate: true });
     }
-  }, [weight]);
-
-  useEffect(() => {
-    const activeElementName = document.activeElement?.getAttribute('name');
-    if (activeElementName === 'amount') {
-      setActiveField('amount');
-    }
-  }, [amount]);
-
-
-  useEffect(() => {
-    if (pricePerUnit === null || isLoading) return;
-    if (activeField !== 'weight') return;
-
-    if (typeof debouncedWeight === 'number' && !isNaN(debouncedWeight)) {
-      const newAmount = calculateTotalAmount(pricePerUnit, debouncedWeight);
-      const newFee = calculateFeeFromAmount(pricePerUnit, debouncedWeight);
-      setValue('amount', newAmount, { shouldValidate: true, shouldDirty: false });
-      setFeeText(`${toPersianDigits(newFee)} ریال`);
-    }
-  }, [debouncedWeight]);
-
-
-  useEffect(() => {
-    if (pricePerUnit === null || isLoading) return;
-    if (activeField !== 'amount') return;
-
-    if (typeof debouncedAmount === 'number' && !isNaN(debouncedAmount)) {
-      const newWeight = calculateUnitFromAmount(pricePerUnit, debouncedAmount);
-      const newFee = calculateFeeFromAmount(pricePerUnit, newWeight);
-      setValue('weight', newWeight, { shouldValidate: true, shouldDirty: false });
-      setFeeText(`${toPersianDigits(newFee)} ریال`);
-    }
-  }, [debouncedAmount]);
-
+  }, [debouncedAmount, debouncedWeight, activeField]);
 
   const onSubmit = (data: SellFormInputs) => {
-    console.log('فروش طلا', data);
+    console.log('فروش طلا:', data);
   };
+
 
   return (
     <TransactionForm
       onSubmit={handleSubmit(onSubmit)}
       register={register}
       errors={errors}
-      isValid={isValid && !isLoading}
-      submitButtonLabel={isLoading ? 'در حال دریافت قیمت...' : 'فروش طلا'}
+      isValid={isValid && pricePerUnit !== null}
+      submitButtonLabel={pricePerUnit ? 'در حال دریافت قیمت...' : 'خرید طلا'}
       feeText={feeText}
       control={control}
     />
