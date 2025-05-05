@@ -11,11 +11,12 @@ export const calculateTotalAmount = (pricePerUnit: number, unit: number): number
     return rawAmount + fee;
 };
   
-export const calculateUnitFromAmount = (pricePerUnit: number, totalAmount: number): number => {
-    const feeRate = 0.005;
-    const goldUnit = Math.floor(totalAmount / (pricePerUnit * (1 + feeRate)));
-    return goldUnit;
-};
+//wrong approach
+// export const calculateUnitFromAmount = (pricePerUnit: number, totalAmount: number): number => {
+//     const feeRate = 0.005;
+//     const goldUnit = Math.floor(totalAmount / (pricePerUnit * (1 + feeRate)));
+//     return goldUnit;
+// };
   
 export const calculateFeeFromAmount = (pricePerUnit: number, unit: number): number => {
     return calculateFee(pricePerUnit, unit);

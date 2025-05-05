@@ -1,8 +1,7 @@
 'use client';
 
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect} from "react";
 import Image from "next/image";
-import { fetchPrice } from "@/lib/services/test-api";
 import { toPersianDigits } from "@/lib/utils/toPersianDigits";
 import { Triangle } from 'lucide-react';
 import useGoldPriceStore from "@/lib/store/goldPriceStore";

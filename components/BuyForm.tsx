@@ -6,7 +6,6 @@ import TransactionForm from '@/components/TransactionForm';
 import {
   calculateFeeFromAmount,
   calculateTotalAmount,
-  calculateUnitFromAmount,
   calculateUnitAndCorrectAmount
 } from '@/lib/utils/amountCalculator';
 import { toPersianDigits } from '@/lib/utils/toPersianDigits';
@@ -37,6 +36,7 @@ const BuyGoldPage = () => {
   const amount = watch('amount');
   const weight = watch('weight');
 
+  // Debounce each input with a 500ms delay to prevent excessive calculations
   const [debouncedAmount] = useDebounce(amount, 500);
   const [debouncedWeight] = useDebounce(weight, 500);
 
@@ -72,24 +72,40 @@ const BuyGoldPage = () => {
     }
   }, [debouncedWeight]);
 
-  useEffect(() => {
-    if (price === null) return;
-    if (activeField !== 'amount') return;
-  
-    if (typeof debouncedAmount === 'number' && !isNaN(debouncedAmount)) {
-      const { unit: newWeight, correctedAmount } = calculateUnitAndCorrectAmount(price, debouncedAmount);
-      const newFee = calculateFeeFromAmount(price, newWeight);
-  
-      // فقط اگر عدد وارد شده در بازه معتبری بود، فیلد amount رو اصلاح کن
-      if (correctedAmount !== null) {
-        setValue('amount', correctedAmount, { shouldValidate: true, shouldDirty: false });
-      }
-  
-      // همیشه وزن و کارمزد رو آپدیت کن (وزن ممکنه ۰ باشه)
+
+  // If user updates amount, calculate max valid gold units and correct the amount if needed
+useEffect(() => {
+  if (price === null) return;
+  if (activeField !== 'amount') return;
+
+  if (typeof debouncedAmount === 'number' && !isNaN(debouncedAmount)) {
+    
+    // If the user entered exactly the base gold price (without fee),
+    // automatically add the fee and correct the amount and weight.
+    if (debouncedAmount === price) {
+      const correctedAmount = calculateTotalAmount(price, 1); // price + fee for 1 uint of gold
+      const newFee = calculateFeeFromAmount(price, 1);
+      const newWeight = 1;
+
+      setValue('amount', correctedAmount, { shouldValidate: true, shouldDirty: false });
       setValue('weight', newWeight, { shouldValidate: true, shouldDirty: false });
       setFeeText(`${toPersianDigits(newFee)} ریال`);
+      return; 
     }
-  }, [debouncedAmount]);
+
+    // Otherwise, calculate the maximum weight and correct the amount accordingly
+    const { unit: newWeight, correctedAmount } = calculateUnitAndCorrectAmount(price, debouncedAmount);
+    const newFee = calculateFeeFromAmount(price, newWeight);
+
+    if (correctedAmount !== null) {
+      setValue('amount', correctedAmount, { shouldValidate: true, shouldDirty: false });
+    }
+
+    setValue('weight', newWeight, { shouldValidate: true, shouldDirty: false });
+    setFeeText(`${toPersianDigits(newFee)} ریال`);
+  }
+}, [debouncedAmount]);
+
   
   
   const onSubmit = (data: BuyFormInputs) => {
