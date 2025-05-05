@@ -1,15 +1,15 @@
 'use client';
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import TransactionForm from '@/components/TransactionForm';
 import {
   calculateFeeFromAmount,
   calculateTotalAmount,
-  calculateUnitFromAmount
+  calculateUnitAndCorrectAmount
 } from '@/lib/utils/amountCalculator';
 import { toPersianDigits } from '@/lib/utils/toPersianDigits';
-import { fetchPrice } from '@/lib/services/test-api';
+import useGoldPriceStore from '@/lib/store/goldPriceStore';
 import { useDebounce } from 'use-debounce';
 
 interface BuyFormInputs {
@@ -29,30 +29,21 @@ const BuyGoldPage = () => {
     mode: 'onChange',
   });
 
-  const [feeText, setFeeText] = useState('۰ ریال');
-  const [pricePerUnit, setPricePerUnit] = useState<number | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [activeField, setActiveField] = useState<'amount' | 'weight' | null>(null);
+  const { price, fetchPrice } = useGoldPriceStore();
+  const [feeText, setFeeText] = React.useState('۰ ریال');
+  const [activeField, setActiveField] = React.useState<'amount' | 'weight' | null>(null);
 
   const amount = watch('amount');
   const weight = watch('weight');
 
+  // Debounce each input with a 500ms delay to prevent excessive calculations
   const [debouncedAmount] = useDebounce(amount, 500);
   const [debouncedWeight] = useDebounce(weight, 500);
 
   useEffect(() => {
-    const getPrice = async () => {
-      try {
-        const data = await fetchPrice();
-        setPricePerUnit(data.price);
-      } catch (error) {
-        console.error('خطا در گرفتن قیمت طلا:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    getPrice();
+    fetchPrice();
+    const interval = setInterval(fetchPrice, 30000);
+    return () => clearInterval(interval);
   }, []);
 
   useEffect(() => {
@@ -69,33 +60,54 @@ const BuyGoldPage = () => {
     }
   }, [amount]);
 
-
   useEffect(() => {
-    if (pricePerUnit === null || isLoading) return;
+    if (price === null) return;
     if (activeField !== 'weight') return;
 
     if (typeof debouncedWeight === 'number' && !isNaN(debouncedWeight)) {
-      const newAmount = calculateTotalAmount(pricePerUnit, debouncedWeight);
-      const newFee = calculateFeeFromAmount(pricePerUnit, debouncedWeight);
+      const newAmount = calculateTotalAmount(price, debouncedWeight);
+      const newFee = calculateFeeFromAmount(price, debouncedWeight);
       setValue('amount', newAmount, { shouldValidate: true, shouldDirty: false });
       setFeeText(`${toPersianDigits(newFee)} ریال`);
     }
   }, [debouncedWeight]);
 
 
-  useEffect(() => {
-    if (pricePerUnit === null || isLoading) return;
-    if (activeField !== 'amount') return;
+  // If user updates amount, calculate max valid gold units and correct the amount if needed
+useEffect(() => {
+  if (price === null) return;
+  if (activeField !== 'amount') return;
 
-    if (typeof debouncedAmount === 'number' && !isNaN(debouncedAmount)) {
-      const newWeight = calculateUnitFromAmount(pricePerUnit, debouncedAmount);
-      const newFee = calculateFeeFromAmount(pricePerUnit, newWeight);
+  if (typeof debouncedAmount === 'number' && !isNaN(debouncedAmount)) {
+    
+    // If the user entered exactly the base gold price (without fee),
+    // automatically add the fee and correct the amount and weight.
+    if (debouncedAmount === price) {
+      const correctedAmount = calculateTotalAmount(price, 1); // price + fee for 1 uint of gold
+      const newFee = calculateFeeFromAmount(price, 1);
+      const newWeight = 1;
+
+      setValue('amount', correctedAmount, { shouldValidate: true, shouldDirty: false });
       setValue('weight', newWeight, { shouldValidate: true, shouldDirty: false });
       setFeeText(`${toPersianDigits(newFee)} ریال`);
+      return; 
     }
-  }, [debouncedAmount]);
 
+    // Otherwise, calculate the maximum weight and correct the amount accordingly
+    const { unit: newWeight, correctedAmount } = calculateUnitAndCorrectAmount(price, debouncedAmount);
+    const newFee = calculateFeeFromAmount(price, newWeight);
 
+    if (correctedAmount !== null) {
+      setValue('amount', correctedAmount, { shouldValidate: true, shouldDirty: false });
+    }
+
+    setValue('weight', newWeight, { shouldValidate: true, shouldDirty: false });
+    setFeeText(`${toPersianDigits(newFee)} ریال`);
+  }
+}, [debouncedAmount]);
+
+  
+  
   const onSubmit = (data: BuyFormInputs) => {
     console.log('خرید طلا', data);
   };
@@ -105,8 +117,8 @@ const BuyGoldPage = () => {
       onSubmit={handleSubmit(onSubmit)}
       register={register}
       errors={errors}
-      isValid={isValid && !isLoading}
-      submitButtonLabel={isLoading ? 'در حال دریافت قیمت...' : 'خرید طلا'}
+      isValid={isValid}
+      submitButtonLabel={'خرید طلا'}
       feeText={feeText}
       control={control}
     />

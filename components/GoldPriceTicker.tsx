@@ -1,28 +1,19 @@
 'use client';
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect} from "react";
 import Image from "next/image";
-import { fetchPrice } from "@/lib/services/test-api";
 import { toPersianDigits } from "@/lib/utils/toPersianDigits";
 import { Triangle } from 'lucide-react';
-
+import useGoldPriceStore from "@/lib/store/goldPriceStore";
 
 const GoldPriceTicker = () => {
-  const [price, setPrice] = useState<number | null>(null);
-  const [rate, setRate] = useState<number | null>(null);
-  const [error, setError] = useState<string | null>(null);
+
+  const { price, rate, fetchPrice, error } = useGoldPriceStore();
 
   useEffect(() => {
-    const loadPrice = async () => {
-      try {
-        const data = await fetchPrice();
-        setPrice(data.price);
-        setRate(data.rate);
-      } catch (err: any) {
-        setError('Failed to load the price');
-      }
-    };
-    loadPrice();
+    fetchPrice();
+    const interval = setInterval(fetchPrice, 30000);
+    return () => clearInterval(interval);
   }, []);
 
   return (
@@ -32,8 +23,7 @@ const GoldPriceTicker = () => {
           src="/assets/gold-ingot.png"
           alt="gold ingot"
           fill
-          sizes="10"
-          className="object-contain"
+          sizes="(max-width: 600px) 40px, 80px"
         />
       </div>
       <div className="flex flex-col gap-2 w-full">
@@ -42,6 +32,7 @@ const GoldPriceTicker = () => {
             قیمت حال حاضر یک سوت طلا
           </span>
           <span className="text-sm text-gray-700">
+          <div aria-live="assertive">
           {price !== null ? (
             <span className="flex items-baseline gap-1">
               <span className="text-sm text-gray-700">
@@ -50,6 +41,7 @@ const GoldPriceTicker = () => {
               <span className="text-xs text-gray-500"> ریال </span>
             </span>
           ) : error}
+          </div>
           </span>
         </div>
         <div className="flex items-center justify-between">
